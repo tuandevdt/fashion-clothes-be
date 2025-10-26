@@ -46,11 +46,6 @@ const saleProductSchema = new mongoose.Schema({
             message: 'Sản phẩm phải có ít nhất một hình ảnh'
         }
     },
-    size: {
-        type: [String],
-        enum: ['S', 'M', 'L', 'XL'],
-        default: ['M']
-    },
     colors: {
         type: [String],
         enum: ['Đen', 'Trắng', 'Xanh'],
@@ -75,6 +70,15 @@ const saleProductSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
+
+saleProductSchema.virtual('sizes', {
+  ref: 'product_size',
+  localField: '_id',
+  foreignField: 'productCode'
+});
+saleProductSchema.set('toJSON', { virtuals: true });
+saleProductSchema.set('toObject', { virtuals: true });
+
 
 // Middleware để tự động tính discount_price trước khi lưu
 saleProductSchema.pre('save', function(next) {

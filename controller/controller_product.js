@@ -1,11 +1,13 @@
 const Product = require('../model/model_product');
 const Comment = require('../model/model_comment');
+const ProductSize = require('../model/model_product_size');
 const { Types } = require('mongoose'); // dùng để convert _id về ObjectId
 
 // Lấy danh sách sản phẩm
 exports.getAllProducts = async (req, res) => {
     try {
-        const products = await Product.find();
+        const products = await Product.find().populate('sizes');
+
         res.json(products);
     } catch (error) {
         console.error('Get all products error:', error);
@@ -31,7 +33,7 @@ exports.getProductById = async (req, res) => {
         const objectId = new Types.ObjectId(id);
 
         // Tìm sản phẩm theo ObjectId
-        const result = await Product.findById(objectId);
+        const result = await Product.findById(objectId).populate('sizes');
 
         if (result) {
             res.json({
@@ -59,9 +61,9 @@ exports.getProductById = async (req, res) => {
 // Tạo sản phẩm mới
 exports.createProduct = async (req, res) => {
     try {
-        const { name, price, stock, sold, description, images, size, colors, categoryCode } = req.body;
+        const { name, price, stock, sold, description, images, colors, categoryCode, size_items } = req.body;
 
-        if (!name || !price || !stock || !description || !images || !Array.isArray(images) || !size || !Array.isArray(size) || !categoryCode) {
+        if (!name || !price || !stock || !description || !images || !Array.isArray(images) || !categoryCode) {
             return res.status(400).json({ message: 'Vui lòng nhập đầy đủ thông tin sản phẩm, images, size và categoryCode hợp lệ' });
         }
 
@@ -90,11 +92,20 @@ exports.createProduct = async (req, res) => {
             sold: sold || 0, 
             description, 
             images, 
-            size, 
             colors, 
             categoryCode 
         });
         const savedProduct = await product.save();
+        const productId = savedProduct._id;
+        
+        
+        const sizeEntries = size_items.map(item => ({
+            size: item.size,
+            quantity: item.quantity,
+            productCode: productId,
+            productModel: 'product'
+        }));
+        await ProductSize.insertMany(sizeEntries);
 
         res.status(201).json({ message: 'Tạo sản phẩm thành công', product: savedProduct });
     } catch (error) {
@@ -106,7 +117,7 @@ exports.createProduct = async (req, res) => {
 // Cập nhật sản phẩm
 exports.updateProduct = async (req, res) => {
     try {
-        const { name, price, stock, sold, description, images, size, colors, categoryCode } = req.body;
+        const { name, price, stock, sold, description, images, size, colors, categoryCode, size_items } = req.body;
         const objectId = new Types.ObjectId(req.params.id);
 
         const product = await Product.findById(objectId);
@@ -162,6 +173,20 @@ exports.updateProduct = async (req, res) => {
         if (categoryCode) product.categoryCode = categoryCode;
 
         const updatedProduct = await product.save();
+
+        const productId = updatedProduct._id;
+
+        await ProductSize.deleteMany({ productCode: productId, productModel: 'product' });
+        
+        
+        const sizeEntries = size_items.map(item => ({
+            size: item.size,
+            quantity: item.quantity,
+            productCode: productId,
+            productModel: 'product'
+        }));
+        await ProductSize.insertMany(sizeEntries);
+
         res.json({ message: 'Cập nhật sản phẩm thành công', product: updatedProduct });
     } catch (error) {
         console.error('Update product error:', error);
