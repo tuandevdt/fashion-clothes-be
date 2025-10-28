@@ -582,7 +582,7 @@ exports.getBestSellingProducts = async (req, res) => {
   try {
     const { limit = 10 } = req.query;
 
-    const saleProducts = await SaleProduct.find()
+    const saleProducts = await SaleProduct.find().populate('sizes')
       .sort({ sold: -1 })
       .limit(Number(limit));
 
@@ -618,7 +618,7 @@ exports.getSaleProductDetailWithComments = async (req, res) => {
       }))
     );
 
-    const product = await SaleProduct.findById(objectId);
+    const product = await SaleProduct.findById(objectId).populate('sizes');
     if (!product) {
       return res.status(404).json({ message: "Sale product not found" });
     }

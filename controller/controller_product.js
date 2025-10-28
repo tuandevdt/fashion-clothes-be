@@ -241,7 +241,7 @@ exports.getProductsByCategory = async (req, res) => {
             return res.status(400).json({ message: 'Category code là bắt buộc' });
         }
 
-        const products = await Product.find({ categoryCode: categoryCode.toLowerCase() });
+        const products = await Product.find({ categoryCode: categoryCode.toLowerCase() }).populate('sizes');
         
         if (products.length === 0) {
             return res.status(404).json({ 
@@ -289,7 +289,7 @@ exports.updateStock = async (req, res) => {
 exports.getProductDetailWithComments = async (req, res) => {
     try {
       const objectId = new Types.ObjectId(req.params.id);
-      const product = await Product.findById(objectId);
+      const product = await Product.findById(objectId).populate('sizes');
       if (!product) {
         return res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
       }
