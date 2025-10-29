@@ -1,6 +1,8 @@
 const Cart = require('../model/model_cart');
 const Product = require('../model/model_product');
 const SaleProduct = require('../model/model_sale_product');
+const ProductSize = require("../model/model_product_size");
+
 
 // [GET] /api/carts/:user_id
 const getCartByUserId = async (req, res) => {
@@ -144,8 +146,21 @@ const updateItemQuantity = async (req, res) => {
           !(item.product_id.equals(product_id) && item.size === size &&  item.type === type)
       );
     } else {
+      const checkSize = await ProductSize.findOne({
+        productCode: product_id,
+        size: size,
+      });
+
+      if (!checkSize) {
+        return res.status(404).json({ success: false, message: 'Kích thước sản phẩm không tồn tại' });
+      }
+
+      if(checkSize.quantity < quantity){
+        return res.status(200).json({ success: false, message: 'Số lượng trong kho không đủ' });
+      }
       item.quantity = quantity;
     }
+
 
     cart.updated_at = new Date();
     await cart.save();
