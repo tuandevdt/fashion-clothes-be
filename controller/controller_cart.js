@@ -92,6 +92,15 @@ const addToCart = async (req, res) => {
       );
 
       if (existingItem) {
+        const checkSize = await ProductSize.findOne({
+        productCode: product_id,
+        size: size,
+      });
+
+      if(checkSize.quantity < (existingItem.quantity + quantity)){
+        return res.status(200).json({ success: false, message: 'Số lượng thêm vượt quá kho' });
+      }
+
         existingItem.quantity += quantity;
       } else {
         cart.items.push(newItem);

@@ -4,6 +4,7 @@ const SaleProduct = require('../model/model_sale_product');
 const User = require('../model/model_user');
 const Voucher = require('../model/model_voucher');
 const modelNotification = require('../model/model_notification');
+const ProductSize = require('../model/model_product_size');
 
 // ✅ THÊM: Helper function để cập nhật tồn kho một cách nhất quán
 const updateProductStock = async (item, operation = 'decrease', source = 'unknown') => {
@@ -41,12 +42,22 @@ const updateProductStock = async (item, operation = 'decrease', source = 'unknow
           stock: quantityChange
         }
       });
+      await ProductSize.findOneAndUpdate({productCode: item.id_product,  size: item.size }, {
+        $inc: { 
+          quantity: quantityChange
+        }
+      });
       console.log(`✅ Đã ${operation === 'decrease' ? 'giảm' : 'tăng'} tồn kho sản phẩm giảm giá: ${product.name} (${source})`);
     } else {
       await Product.findByIdAndUpdate(item.id_product, {
         $inc: { 
           sold: soldChange,
           stock: quantityChange
+        }
+      });
+      await ProductSize.findOneAndUpdate({productCode: item.id_product,  size: item.size }, {
+        $inc: { 
+          quantity: quantityChange
         }
       });
       console.log(`✅ Đã ${operation === 'decrease' ? 'giảm' : 'tăng'} tồn kho sản phẩm thường: ${product.name} (${source})`);
@@ -125,7 +136,7 @@ const orderController = {
 
       // ✅ Validate từng sản phẩm và kiểm tra tồn kho
       for (const item of items) {
-        if (!item.id_product || !item.name || !item.purchaseQuantity || !item.price) {
+        if (!item.id_product || !item.name || !item.purchaseQuantity || !item.price || item.size) {
           return res.status(400).json({ message: "Mỗi sản phẩm cần đủ thông tin id_product, name, purchaseQuantity, price" });
         }
 
